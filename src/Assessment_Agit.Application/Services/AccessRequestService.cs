@@ -111,7 +111,6 @@ public class AccessRequestService : IAccessRequestService
             await _context.SaveChangesAsync(cancellationToken);
             _logger?.LogInformation("Successfully created AccessRequest {RequestId} for requester {UserId} (ClientRequestId: {ClientRequestId}).", request.Id, currentUser.Id, request.ClientRequestId);
         }
-        }
         catch (DbUpdateException)
         {
             // Handle concurrent race for the same ClientRequestId unique constraint

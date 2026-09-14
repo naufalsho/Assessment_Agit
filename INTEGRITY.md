@@ -10,3 +10,4 @@ Primary AI tools used: Google DeepMind Antigravity AI Assistant (Gemini 3.8 Flas
 External human assistance: None
 Starter/template code used: Default ASP.NET Core Razor Pages template (`dotnet new razor`) for baseline web host scaffolding.
 External repositories/snippets copied or adapted: None
+
