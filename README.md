@@ -64,6 +64,7 @@ dotnet test tests/Assessment_Agit.Tests/Assessment_Agit.Tests.csproj
 - `Scenario5_DuplicateSubmit_IsIdempotent_DoesNotCreateSecondRow` : Proteksi idempotensi `ClientRequestId`.
 - `Scenario6_ConcurrentAction_OptimisticConcurrency_ThrowsConflict` : Proteksi optimistic concurrency (409 Conflict).
 - `Scenario7_RejectedRequest_RequiresReason_BecomesTerminal` : Validasi rejection reason & terminal state.
+- `Scenario8_RequesterWithoutManager_ThrowsDomainValidationException` : Validasi pre-condition bahwa pemohon wajib memiliki direct manager.
 
 ---
 
@@ -163,6 +164,6 @@ Sistem dilengkapi **User Switcher** pada bilah navigasi atas (kanan atas) yang m
 - [x] **REVIEW.md**: Production readiness self-review matrix, limitasi, dan deferred work.
 - [x] **INTEGRITY.md**: Deklarasi integritas kepemilikan kode.
 - [x] **README.md**: Petunjuk setup, run, test, dan demo walkthrough.
-- [x] **Automated Tests**: 100% lulus (7/7 skenario).
+- [x] **Automated Tests**: 100% lulus (8/8 skenario).
 - [ ] **Tag `phase-1-complete`**: Ditangguhkan sesuai instruksi pengguna untuk pengecekan manual terlebih dahulu sebelum di-tag.
 
