@@ -1,0 +1,266 @@
+@page "{id:guid}"
+@model Assessment_Agit.Pages.Requests.DetailModel
+@{
+    ViewData["Title"] = "Request Detail";
+    var r = Model.RequestDetail;
+}
+
+@if (r == null)
+{
+    <div class="alert alert-danger">Request not found.</div>
+    return;
+}
+
+<div class="row g-4">
+    <!-- Header / Banner -->
+    <div class="col-12">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h4 class="fw-bold mb-0">Access Request #@r.Id.ToString().Substring(0, 8)</h4>
+                    @if (r.Status == RequestStatus.PendingManager)
+                    {
+                        <span class="badge bg-warning text-dark px-3 py-2">Pending Manager Approval</span>
+                    }
+                    else if (r.Status == RequestStatus.PendingSystemOwner)
+                    {
+                        <span class="badge bg-info text-dark px-3 py-2">Pending System Owner Approval</span>
+                    }
+                    else if (r.Status == RequestStatus.Approved)
+                    {
+                        <span class="badge bg-success px-3 py-2">Approved</span>
+                    }
+                    else if (r.Status == RequestStatus.Rejected)
+                    {
+                        <span class="badge bg-danger px-3 py-2">Rejected</span>
+                    }
+
+                    @if (r.IsHighRisk)
+                    {
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2">High-Risk</span>
+                    }
+                </div>
+                <p class="text-muted small mb-0 font-monospace">ClientRequestId (Idempotency): @r.ClientRequestId</p>
+            </div>
+            <div>
+                <a asp-page="/Requests/Index" class="btn btn-outline-secondary btn-sm">&larr; Back to My Requests</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alert Notifications -->
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="col-12">
+            <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <strong>Action Rejected:</strong> @Model.ErrorMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    }
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="col-12">
+            <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                <strong>Success:</strong> @Model.SuccessMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    }
+
+    <!-- Left Column: Request Details & Action Panel -->
+    <div class="col-lg-7">
+        <!-- Request Details -->
+        <div class="card card-shadow border-0 bg-white p-4 mb-4">
+            <h5 class="fw-bold mb-3">📄 Request Specifications</h5>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <span class="text-muted small d-block">Requester</span>
+                    <strong>@r.RequesterName</strong>
+                    <div class="small text-muted">@r.RequesterEmail</div>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted small d-block">Target Application</span>
+                    <strong>@r.ApplicationName</strong>
+                    <div class="small text-muted">Code: @r.ApplicationCode</div>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted small d-block">Environment</span>
+                    <span class="badge bg-light text-dark border">@r.Environment</span>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted small d-block">Access Level</span>
+                    <span class="badge bg-light text-dark border">@r.AccessLevel</span>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted small d-block">Created At</span>
+                    <span>@r.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss 'UTC'")</span>
+                </div>
+                <div class="col-sm-6">
+                    <span class="text-muted small d-block">Policy Version & Concurrency Token</span>
+                    <span>Policy: <code>@r.PolicyVersion</code> &bull; Version: <code>@r.RowVersion</code></span>
+                </div>
+                <div class="col-12">
+                    <span class="text-muted small d-block">Business Justification</span>
+                    <div class="p-3 bg-light rounded mt-1 border">
+                        @r.Justification
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(r.RejectReason))
+                {
+                    <div class="col-12">
+                        <span class="text-danger small fw-semibold d-block">Rejection Reason</span>
+                        <div class="p-3 bg-danger-subtle text-danger rounded mt-1 border border-danger-subtle">
+                            @r.RejectReason
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Approval Action Panel -->
+        <div class="card card-shadow border-0 bg-white p-4">
+            <h5 class="fw-bold mb-3">⚡ Approver Decision Panel</h5>
+
+            @if (r.Status == RequestStatus.Approved || r.Status == RequestStatus.Rejected)
+            {
+                <div class="alert alert-secondary mb-0">
+                    🔒 This request is in terminal state (<strong>@r.Status</strong>). No further state transitions are permitted.
+                </div>
+            }
+            else if (r.CanCurrentUserApprove)
+            {
+                <div class="p-3 bg-light rounded border mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-success">Action Authorized</span>
+                        <span class="small text-muted">You are the assigned approver for this stage as <strong>@r.AssignedApproverRole</strong>.</span>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <!-- Approve Form -->
+                        <form method="post" asp-page-handler="Approve" asp-route-id="@r.Id" class="d-inline">
+                            <input type="hidden" name="FormRowVersion" value="@r.RowVersion" />
+                            <button type="submit" class="btn btn-success px-4" onclick="return confirm('Confirm approval for this request?');">
+                                ✅ Approve Request
+                            </button>
+                        </form>
+
+                        <!-- Reject Trigger Button -->
+                        <button type="button" class="btn btn-danger px-4" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                            ❌ Reject Request
+                        </button>
+
+                        <!-- Concurrency Conflict Test Button -->
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="simulateStaleAction('@r.Id', @r.RowVersion)">
+                            🧪 Simulate Stale Action (409 Conflict)
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning mb-0 small">
+                    ⏳ <strong>Pending Approval:</strong> Currently awaiting review from <strong>@r.AssignedApproverRole</strong> (@r.AssignedApproverName).<br />
+                    <em>(Your current user profile <code>@Model.CurrentUser?.FullName</code> is not authorized to act on this stage. Use the User Switcher above to test as the assigned approver).</em>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Right Column: Audit Trail Timeline -->
+    <div class="col-lg-5">
+        <div class="card card-shadow border-0 bg-white p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">📜 Audit Trail (Append-Only)</h5>
+                <span class="badge bg-light text-dark border">@r.AuditLogs.Count Events</span>
+            </div>
+
+            <div class="timeline mt-3">
+                @foreach (var log in r.AuditLogs)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="d-flex justify-content-between align-items-start">
+                            <strong class="text-primary small">@log.Action</strong>
+                            <small class="text-muted">@log.Timestamp.ToString("HH:mm:ss")</small>
+                        </div>
+                        <div class="small fw-semibold mt-1">@log.ActorName <span class="text-muted fw-normal">(@log.ActorEmail)</span></div>
+                        <div class="small text-muted mt-1">
+                            @if (log.FromStatus.HasValue)
+                            {
+                                <span>Transition: <code>@log.FromStatus</code> &rarr; <code>@log.ToStatus</code></span>
+                            }
+                            else
+                            {
+                                <span>Initial: <code>@log.ToStatus</code></span>
+                            }
+                        </div>
+                        @if (!string.IsNullOrEmpty(log.Details))
+                        {
+                            <div class="small p-2 bg-light rounded mt-2 border">
+                                @log.Details
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rejection Modal -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-page-handler="Reject" asp-route-id="@r.Id">
+                <input type="hidden" name="FormRowVersion" value="@r.RowVersion" />
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="rejectModalLabel">Reject Access Request</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted">Sesuai aturan bisnis, penolakan <strong>wajib</strong> menyertakan alasan.</p>
+                    <div class="mb-3">
+                        <label for="rejectReasonInput" class="form-label fw-semibold">Rejection Reason <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="rejectReasonInput" name="RejectReason" rows="3" placeholder="Explain reason for rejection..." required></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">Confirm Rejection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function simulateStaleAction(requestId, currentVersion) {
+            // Intentionally submit an outdated version (e.g., 0 or stale version)
+            const staleVersion = currentVersion - 1;
+            showAlert(`Simulating stale action with outdated RowVersion=${staleVersion}...`, 'warning');
+
+            $.ajax({
+                url: `/api/requests/${requestId}/approve`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    rowVersion: staleVersion,
+                    isApproved: true
+                }),
+                success: function() {
+                    showAlert("Action succeeded unexpectedly (version matched)", "info");
+                },
+                error: function(xhr) {
+                    if (xhr.status === 409) {
+                        showAlert(`<strong>[409 Conflict Detected]</strong> ${xhr.responseJSON?.error || 'Concurrency conflict caught successfully!'}`, 'danger');
+                    } else {
+                        showAlert(`HTTP ${xhr.status}: ${xhr.responseJSON?.error || xhr.statusText}`, 'danger');
+                    }
+                }
+            });
+        }
+    </script>
+}
+

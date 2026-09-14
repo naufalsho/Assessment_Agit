@@ -1,3 +1,11 @@
 <Solution>
-  <Project Path="Assessment_Agit/Assessment_Agit.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/Assessment_Agit.Domain/Assessment_Agit.Domain.csproj" />
+    <Project Path="src/Assessment_Agit.Application/Assessment_Agit.Application.csproj" />
+    <Project Path="src/Assessment_Agit.Infrastructure/Assessment_Agit.Infrastructure.csproj" />
+    <Project Path="Assessment_Agit/Assessment_Agit.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Assessment_Agit.Tests/Assessment_Agit.Tests.csproj" />
+  </Folder>
 </Solution>

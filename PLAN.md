@@ -95,5 +95,14 @@ tests/
 ---
 
 ## 6. Perubahan Plan Selama Implementasi
-*(Bagian ini akan diperbarui seiring berjalannya implementasi jika ditemukan kendala atau penyesuaian teknis)*
-- Initial baseline: Perencanaan struktur Clean Architecture 4 layer (`Domain`, `Application`, `Infrastructure`, `Web`) + 1 test project (`Tests`).
+Selama proses implementasi dan eksekusi test suite, beberapa penyesuaian dilakukan untuk memastikan *correctness* dan kepatuhan penuh terhadap spesifikasi:
+1. **Urutan Evaluasi Optimistic Concurrency vs Terminal State**:
+   - *Masalah*: Pada pengujian skenario konkurensi (Scenario 6), request yang telah diubah oleh transaksi pertama berpindah ke status terminal (`Approved`). Ketika transaksi kedua masuk membawa token versi lama (`RowVersion = 1`), pengecekan terminal state sempat mendahului pengecekan versi sehingga menghasilkan `DomainValidationException` (400) dan bukan `ConcurrencyConflictException` (409).
+   - *Penyesuaian*: Pengecekan token konkurensi (`decision.RowVersion != request.RowVersion`) dipindahkan ke tahap paling awal sebelum evaluasi status. Hal ini memastikan bahwa setiap aksi terhadap *stale snapshot* data secara konsisten dilaporkan sebagai *concurrency conflict* (409 Conflict).
+2. **Deterministic Seed Data untuk Uji Terisolasi**:
+   - Demo users dan master applications dikonfigurasi dengan GUID deterministik tetap pada `DbInitializer` (`11111111-...` untuk Alice, `22222222-...` untuk Bob, dst.). Hal ini mempermudah automasi test xUnit dengan in-memory SQLite serta memudahkan pengujian visual bagi assessor melalui dropdown UI switcher.
+3. **Penyediaan Minimal API Endpoints Paralel**:
+   - Selain Razor Pages post handlers, endpoint minimal API (`/api/requests`, `/api/requests/{id}/approve`, `/api/requests/{id}/reject`, `/api/switch-user`) disediakan untuk memfasilitasi AJAX jQuery dari frontend sekaligus pengujian integrasi via HTTP client atau cURL secara transparan.
+4. **Alur Validasi Tag Phase-1-Complete**:
+   - Sesuai arahan evaluasi pengguna, pembuatan Git tag `phase-1-complete` ditangguhkan sampai assessor/pengguna selesai memvalidasi alur secara manual melalui UI atau CLI.
+

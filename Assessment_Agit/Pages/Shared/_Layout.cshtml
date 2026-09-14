@@ -1,45 +1,128 @@
-﻿<!DOCTYPE html>
+@inject Assessment_Agit.Application.Interfaces.ICurrentUserService CurrentUserService
+@inject Assessment_Agit.Application.Interfaces.IAccessRequestService RequestService
+@{
+    var currentUser = await CurrentUserService.GetUserAsync();
+    var demoUsers = await RequestService.GetDemoUsersAsync();
+}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Assessment_Agit</title>
-    <script type="importmap"></script>
+    <title>@ViewData["Title"] - Access Request Hub</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Assessment_Agit.styles.css" asp-append-version="true" />
+    <style>
+        .badge-pending { background-color: #ffc107; color: #000; }
+        .badge-approved { background-color: #198754; color: #fff; }
+        .badge-rejected { background-color: #dc3545; color: #fff; }
+        .timeline-item { position: relative; padding-left: 28px; margin-bottom: 20px; }
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: 6px;
+            top: 6px;
+            bottom: -20px;
+            width: 2px;
+            background: #dee2e6;
+        }
+        .timeline-item:last-child::before { display: none; }
+        .timeline-dot {
+            position: absolute;
+            left: 0;
+            top: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: #0d6efd;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 2px #0d6efd;
+        }
+        .card-shadow {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border-radius: 0.5rem;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-light">
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">Assessment_Agit</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom shadow-sm">
+            <div class="container-fluid px-4">
+                <a class="navbar-brand fw-bold" asp-page="/Index">
+                    <span class="text-primary">🛡️ Access</span>Hub
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                        aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="collapse navbar-collapse" id="navbarMain">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                            <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Index" ? "active" : "")" asp-page="/Index">Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                            <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Requests/Index" ? "active" : "")" asp-page="/Requests/Index">My Requests</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Requests/Create" ? "active" : "")" asp-page="/Requests/Create">New Request</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Approvals/Index" ? "active" : "")" asp-page="/Approvals/Index">
+                                Approvals Inbox
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Requests/All" ? "active" : "")" asp-page="/Requests/All">All Requests & Audit</a>
                         </li>
                     </ul>
+
+                    <!-- User Switcher Dropdown -->
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-light small opacity-75">Simulated User:</span>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-light btn-sm dropdown-toggle fw-semibold" type="button" id="userSwitcherBtn" data-bs-toggle="dropdown" aria-expanded="false">
+                                👤 @(currentUser?.FullName ?? "Select User")
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userSwitcherBtn">
+                                <li><h6 class="dropdown-header">Switch Demo User Persona</h6></li>
+                                @foreach (var u in demoUsers)
+                                {
+                                    var isCurrent = currentUser != null && currentUser.Id == u.Id;
+                                    <li>
+                                        <button class="dropdown-item d-flex justify-content-between align-items-center @(isCurrent ? "active" : "")" 
+                                                type="button" 
+                                                onclick="switchUser('@u.Id')">
+                                            <span>
+                                                <strong>@u.FullName</strong>
+                                                <small class="d-block text-muted">@u.Email</small>
+                                            </span>
+                                            @if (isCurrent)
+                                            {
+                                                <span class="badge bg-light text-dark ms-2">Current</span>
+                                            }
+                                        </button>
+                                    </li>
+                                }
+                            </ul>
+                        </div>
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
+
+    <div class="container-fluid px-4 py-4">
+        <!-- Toast Notification Area -->
+        <div id="alertContainer"></div>
+
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Assessment_Agit - <a asp-area="" asp-page="/Privacy">Privacy</a>
+    <footer class="border-top py-3 text-center text-muted small bg-white mt-auto">
+        <div class="container-fluid">
+            Access Request Hub MVP &bull; Clean Architecture &bull; SQLite Zero-Dependency &bull; ASP.NET Core 10 Razor Pages
         </div>
     </footer>
 
@@ -47,6 +130,34 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
+    <script>
+        function showAlert(message, type = 'info') {
+            const html = `
+                <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
+                    <div>${message}</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            `;
+            $('#alertContainer').html(html);
+        }
+
+        function switchUser(userId) {
+            $.ajax({
+                url: '/api/switch-user',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ userId: userId }),
+                success: function (res) {
+                    location.reload();
+                },
+                error: function (xhr) {
+                    showAlert('Failed to switch user: ' + (xhr.responseJSON?.message || xhr.statusText), 'danger');
+                }
+            });
+        }
+    </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+

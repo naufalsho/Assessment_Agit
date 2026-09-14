@@ -1,0 +1,101 @@
+@page
+@model Assessment_Agit.Pages.Requests.IndexModel
+@{
+    ViewData["Title"] = "My Requests";
+}
+
+<div class="card card-shadow border-0 bg-white p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold mb-1">My Access Requests</h4>
+            <p class="text-muted small mb-0">Showing requests created by <strong>@Model.CurrentUser?.FullName</strong></p>
+        </div>
+        <div>
+            <a asp-page="/Requests/Create" class="btn btn-primary btn-sm">
+                ➕ New Access Request
+            </a>
+        </div>
+    </div>
+
+    @if (Model.Requests.Count == 0)
+    {
+        <div class="text-center py-5">
+            <div class="display-6 text-muted mb-3">📄</div>
+            <h5 class="fw-semibold">No access requests found</h5>
+            <p class="text-muted small">You haven't submitted any access requests yet.</p>
+            <a asp-page="/Requests/Create" class="btn btn-outline-primary btn-sm">Create your first request</a>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Application</th>
+                        <th>Environment</th>
+                        <th>Access Level</th>
+                        <th>Status</th>
+                        <th>Risk Profile</th>
+                        <th>Created</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Requests)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@r.ApplicationName</strong>
+                                <small class="d-block text-muted font-monospace">@r.ClientRequestId</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">@r.Environment</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">@r.AccessLevel</span>
+                            </td>
+                            <td>
+                                @if (r.Status == RequestStatus.PendingManager)
+                                {
+                                    <span class="badge bg-warning text-dark">Pending Manager</span>
+                                }
+                                else if (r.Status == RequestStatus.PendingSystemOwner)
+                                {
+                                    <span class="badge bg-info text-dark">Pending System Owner</span>
+                                }
+                                else if (r.Status == RequestStatus.Approved)
+                                {
+                                    <span class="badge bg-success">Approved</span>
+                                }
+                                else if (r.Status == RequestStatus.Rejected)
+                                {
+                                    <span class="badge bg-danger">Rejected</span>
+                                }
+                            </td>
+                            <td>
+                                @if (r.IsHighRisk)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">High-Risk</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Standard</span>
+                                }
+                            </td>
+                            <td>
+                                <small class="text-muted">@r.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                            </td>
+                            <td class="text-end">
+                                <a asp-page="/Requests/Detail" asp-route-id="@r.Id" class="btn btn-outline-primary btn-sm">
+                                    View Details &rarr;
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+

@@ -1,0 +1,156 @@
+@page
+@model Assessment_Agit.Pages.Requests.CreateModel
+@{
+    ViewData["Title"] = "New Access Request";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card card-shadow border-0 bg-white p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h4 class="fw-bold mb-0">Submit Access Request</h4>
+                    <p class="text-muted small mb-0">Submitting on behalf of: <strong>@Model.CurrentUser?.FullName</strong> (@Model.CurrentUser?.Email)</p>
+                </div>
+                <a asp-page="/Requests/Index" class="btn btn-outline-secondary btn-sm">&larr; Back to My Requests</a>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <strong>Error:</strong> @Model.ErrorMessage
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            <form method="post" id="createRequestForm">
+                <!-- Application Selection -->
+                <div class="mb-3">
+                    <label asp-for="Input.ApplicationId" class="form-label fw-semibold">Target Application <span class="text-danger">*</span></label>
+                    <select asp-for="Input.ApplicationId" class="form-select" required>
+                        <option value="">-- Select Application --</option>
+                        @foreach (var app in Model.Applications)
+                        {
+                            <option value="@app.Id">@app.Name (System Owner: @app.SystemOwnerName)</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Environment & Access Level -->
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.Environment" class="form-label fw-semibold">Environment <span class="text-danger">*</span></label>
+                        <select asp-for="Input.Environment" class="form-select" id="envSelect" required>
+                            <option value="1">NonProduction</option>
+                            <option value="2">Production</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.AccessLevel" class="form-label fw-semibold">Access Level <span class="text-danger">*</span></label>
+                        <select asp-for="Input.AccessLevel" class="form-select" id="accessSelect" required>
+                            <option value="1">Read</option>
+                            <option value="2">Admin</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- High-Risk Banner dynamically updated via jQuery -->
+                <div id="riskNotice" class="alert alert-warning py-2 small d-none" role="alert">
+                    ⚠️ <strong>High-Risk Request Detected:</strong> Environment is <code>Production</code> or Access Level is <code>Admin</code>. This request will require both <strong>Manager Approval</strong> and <strong>System Owner Approval</strong>.
+                </div>
+                <div id="standardNotice" class="alert alert-info py-2 small" role="alert">
+                    ℹ️ <strong>Standard Request:</strong> Requires only <strong>Manager Approval</strong> to become Approved.
+                </div>
+
+                <!-- Justification -->
+                <div class="mb-3">
+                    <label asp-for="Input.Justification" class="form-label fw-semibold">Business Justification <span class="text-danger">*</span></label>
+                    <textarea asp-for="Input.Justification" class="form-control" rows="3" placeholder="Provide business reasons for this access request..." required></textarea>
+                </div>
+
+                <!-- ClientRequestId (Idempotency Key) -->
+                <div class="mb-4 p-3 bg-light rounded border">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <label asp-for="Input.ClientRequestId" class="form-label fw-semibold mb-0 small text-muted">
+                            🔑 Idempotency Key (ClientRequestId)
+                        </label>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="regenerateGuid()">Generate New UUID</button>
+                    </div>
+                    <input asp-for="Input.ClientRequestId" class="form-control form-control-sm font-monospace" id="clientRequestIdInput" required />
+                    <div class="form-text small">
+                        Mengirim ulang request dengan <code>ClientRequestId</code> yang sama tidak akan menduplikasi row data di database.
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">
+                        Submit Request
+                    </button>
+                    <button type="button" class="btn btn-outline-warning" onclick="simulateDuplicateSubmit()">
+                        🧪 Simulate Duplicate Submit (Idempotency)
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function checkRisk() {
+            const env = $('#envSelect').val();
+            const access = $('#accessSelect').val();
+
+            // 2 is Production, 2 is Admin
+            if (env === '2' || access === '2') {
+                $('#riskNotice').removeClass('d-none');
+                $('#standardNotice').addClass('d-none');
+            } else {
+                $('#riskNotice').addClass('d-none');
+                $('#standardNotice').removeClass('d-none');
+            }
+        }
+
+        $('#envSelect, #accessSelect').on('change', checkRisk);
+        $(document).ready(checkRisk);
+
+        function regenerateGuid() {
+            const newGuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            $('#clientRequestIdInput').val(newGuid);
+        }
+
+        function simulateDuplicateSubmit() {
+            const formData = {
+                clientRequestId: $('#clientRequestIdInput').val(),
+                applicationId: $('select[name="Input.ApplicationId"]').val(),
+                environment: parseInt($('#envSelect').val()),
+                accessLevel: parseInt($('#accessSelect').val()),
+                justification: $('textarea[name="Input.Justification"]').val() || "Duplicate test justification"
+            };
+
+            if (!formData.applicationId) {
+                showAlert("Please select an application first.", "warning");
+                return;
+            }
+
+            showAlert("Sending duplicate submit with the same ClientRequestId...", "info");
+
+            $.ajax({
+                url: '/api/requests',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(res) {
+                    showAlert(`<strong>Idempotency Verified!</strong> Returned existing or created request with ID: <code>${res.id}</code> without creating duplicate records.`, 'success');
+                },
+                error: function(xhr) {
+                    showAlert('Error: ' + (xhr.responseJSON?.error || xhr.statusText), 'danger');
+                }
+            });
+        }
+    </script>
+}
+

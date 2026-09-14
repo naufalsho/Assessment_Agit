@@ -1,0 +1,93 @@
+@page
+@model Assessment_Agit.Pages.Approvals.IndexModel
+@{
+    ViewData["Title"] = "Approval Inbox";
+}
+
+<div class="card card-shadow border-0 bg-white p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h4 class="fw-bold mb-1">Approval Inbox</h4>
+            <p class="text-muted small mb-0">Pending requests awaiting decision by <strong>@Model.CurrentUser?.FullName</strong> (@Model.CurrentUser?.Role)</p>
+        </div>
+        <span class="badge bg-primary px-3 py-2">@Model.PendingRequests.Count Actionable Items</span>
+    </div>
+
+    @if (Model.PendingRequests.Count == 0)
+    {
+        <div class="text-center py-5">
+            <div class="display-6 text-muted mb-3">✨</div>
+            <h5 class="fw-semibold">No pending approvals</h5>
+            <p class="text-muted small">
+                There are currently no access requests waiting for your approval as <strong>@Model.CurrentUser?.Role</strong>.<br />
+                Switch to <strong>Bob</strong> (Manager) or <strong>Carol / Dana</strong> (System Owners) using the User Switcher above to view actionable tasks.
+            </p>
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Requester</th>
+                        <th>Target App</th>
+                        <th>Env / Access</th>
+                        <th>Stage</th>
+                        <th>Risk Profile</th>
+                        <th>Submitted</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.PendingRequests)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@r.RequesterName</strong>
+                                <small class="d-block text-muted">@r.RequesterEmail</small>
+                            </td>
+                            <td>
+                                <strong>@r.ApplicationName</strong>
+                                <small class="d-block text-muted">@r.ApplicationCode</small>
+                            </td>
+                            <td>
+                                <div><span class="badge bg-light text-dark border">@r.Environment</span></div>
+                                <div class="mt-1"><span class="badge bg-light text-dark border">@r.AccessLevel</span></div>
+                            </td>
+                            <td>
+                                @if (r.Status == RequestStatus.PendingManager)
+                                {
+                                    <span class="badge bg-warning text-dark">Stage 1: Manager Review</span>
+                                }
+                                else if (r.Status == RequestStatus.PendingSystemOwner)
+                                {
+                                    <span class="badge bg-info text-dark">Stage 2: System Owner Review</span>
+                                }
+                            </td>
+                            <td>
+                                @if (r.IsHighRisk)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">High-Risk (2-Stage)</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Standard (1-Stage)</span>
+                                }
+                            </td>
+                            <td>
+                                <small class="text-muted">@r.CreatedAt.ToString("yyyy-MM-dd HH:mm")</small>
+                            </td>
+                            <td class="text-end">
+                                <a asp-page="/Requests/Detail" asp-route-id="@r.Id" class="btn btn-primary btn-sm">
+                                    Review & Decision &rarr;
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
