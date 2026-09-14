@@ -1,8 +1,10 @@
 @page "{id:guid}"
 @model Assessment_Agit.Pages.Requests.DetailModel
 @{
-    ViewData["Title"] = "Request Detail";
     var r = Model.RequestDetail;
+    ViewData["BreadcrumbSection"] = "My Requests";
+    ViewData["BreadcrumbSectionUrl"] = "/Requests/Index";
+    ViewData["Title"] = r != null ? $"Request #{r.Id.ToString().Substring(0, 8)}" : "Request Detail";
 }
 
 @if (r == null)
@@ -328,3 +330,4 @@
         }
     </script>
 }
+

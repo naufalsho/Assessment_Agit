@@ -105,4 +105,14 @@ Selama proses implementasi dan eksekusi test suite, beberapa penyesuaian dilakuk
    - Selain Razor Pages post handlers, endpoint minimal API (`/api/requests`, `/api/requests/{id}/approve`, `/api/requests/{id}/reject`, `/api/switch-user`) disediakan untuk memfasilitasi AJAX jQuery dari frontend sekaligus pengujian integrasi via HTTP client atau cURL secara transparan.
 4. **Alur Validasi Tag Phase-1-Complete**:
    - Sesuai arahan evaluasi pengguna, pembuatan Git tag `phase-1-complete` ditangguhkan sampai assessor/pengguna selesai memvalidasi alur secara manual melalui UI atau CLI.
+5. **Mitigasi SQLite DateTimeOffset OrderBy**:
+   - EF Core SQLite tidak mendukung ekspresi tipe `DateTimeOffset` dalam klausa `ORDER BY`. Seluruh entity tanggal dimigrasikan ke `DateTime` (UTC), dan pengurutan riwayat request dipastikan dieksekusi secara aman via LINQ to Objects (`.ToListAsync()` lalu `.OrderByDescending()`).
+6. **Modernisasi UI dengan Modal-First, SweetAlert2, DataTables, dan Breadcrumbs**:
+   - Seluruh formulir tindakan (New Request, Approve confirmation, Reject dengan alasan wajib, dan Quick Decision di inbox) ditransformasikan menjadi Bootstrap Modal interaktif.
+   - Mengadopsi SweetAlert2 yang di-host lokal di `wwwroot/lib/sweetalert2` untuk menggantikan alert default browser dengan toast dan feedback modal yang modern.
+   - Mengintegrasikan DataTables Bootstrap 5 lokal di `wwwroot/lib/datatables` pada seluruh tabel (Dashboard Demo Users, My Requests, Approvals Inbox, dan Global Audit) dengan pagination, sorting, dan live search instan.
+   - Menambahkan navigasi Breadcrumbs di seluruh halaman dan menghapus tombol shortcut header navbar demi kerapian arsitektur visual.
+7. **Penanganan Requester Selain Alice (Pre-condition Validation)**:
+   - Sesuai Business Rule 2.6 (semua request mewajibkan Manager approval dan manager hanya memproses direct report), backend menerapkan validasi pre-condition: pemohon wajib memiliki `ManagerId` yang valid di hirarki organisasi.
+   - Jika pengguna tanpa atasan langsung (Bob, Carol, Dana, Erin) mencoba membuat request, backend langsung menolak dengan `DomainValidationException` (HTTP 400 Bad Request) dan UI menampilkan notifikasi hierarki edukatif, mencegah timbulnya *orphan request*.
 

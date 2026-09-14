@@ -30,6 +30,12 @@ Dokumen ini mendokumentasikan peran asistensi AI (Antigravity AI Assistant berba
 - **Decision**: **Changed**.
 - **Why**: Analisis kode menunjukkan bahwa pengecekan `decision.RowVersion != request.RowVersion` harus ditempatkan **sebelum** evaluasi terminal state atau aturan bisnis lainnya. Jika user melakukan submit terhadap snapshot versi lama yang telah berubah di database, anomali tersebut secara fundamental adalah *stale data conflict* (HTTP 409) terlepas dari apakah status yang baru itu terminal atau bukan.
 
+### Interaksi 5: Modal-First Form Interaction, Local SweetAlert2 & DataTables Integration
+- **Ask**: Bagaimana merancang interaksi formulir (pengajuan request, approval, dan penolakan) agar intuitif, mencegah perpindahan halaman yang tidak perlu, dan memastikan alert maupun tabel interaktif (DataTables) tersimpan secara lokal tanpa ketergantungan CDN?
+- **AI Suggestion**: Menggunakan CDN eksternal untuk SweetAlert2 dan DataTables serta meletakkan tombol submit form di halaman terpisah.
+- **Decision**: **Changed**.
+- **Why**: Sesuai prinsip *zero-dependency* dan privasi internal, file SweetAlert2 dan DataTables Bootstrap 5 diunduh langsung ke dalam direktori lokal `Assessment_Agit/wwwroot/lib/` (`sweetalert2` dan `datatables`) tanpa mengandalkan koneksi CDN saat runtime. Seluruh formulir diintegrasikan ke dalam Bootstrap Modal (`#globalNewRequestModal`, `#approveModal`, `#rejectModal`, dan quick modals di inbox) disertai navigasi Breadcrumbs dan tabel interaktif dengan search/pagination instan.
+
 ---
 
 ## 2. Three Things AI Got Wrong

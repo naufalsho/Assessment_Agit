@@ -363,5 +363,29 @@ public class AccessRequestWorkflowTests : IDisposable
             });
         });
     }
+
+    // Scenario 8: Pre-condition validation: User without assigned manager (e.g. Bob or Erin) cannot create request
+    [Fact]
+    public async Task Scenario8_RequesterWithoutManager_ThrowsDomainValidationException()
+    {
+        // Switch to Bob (who has ManagerId = null in seeded hierarchy)
+        _currentUserService.SetUser(DbInitializer.BobId);
+
+        var createDto = new CreateAccessRequestDto
+        {
+            ClientRequestId = Guid.NewGuid().ToString(),
+            ApplicationId = DbInitializer.CrmAppId,
+            Environment = EnvironmentType.NonProduction,
+            AccessLevel = AccessLevel.Read,
+            Justification = "Bob trying to submit request without an assigned manager"
+        };
+
+        var ex = await Assert.ThrowsAsync<DomainValidationException>(async () =>
+        {
+            await _service.CreateRequestAsync(createDto);
+        });
+
+        Assert.Contains("does not have an assigned direct manager", ex.Message);
+    }
 }
 

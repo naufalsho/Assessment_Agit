@@ -1,6 +1,6 @@
 # 🛡️ Access Request Hub MVP (Phase 1)
 
-Access Request Hub adalah sistem *single source of truth* untuk pengajuan, approval berjenjang, dan audit trail permintaan akses aplikasi internal. Proyek ini dibangun dengan pendekatan **Clean Architecture**, **SQLite** (*zero-dependency*, mandiri tanpa Docker atau DBMS server eksternal), **Entity Framework Core**, **Razor Pages**, **Bootstrap 5**, dan **jQuery**.
+Access Request Hub adalah sistem *single source of truth* untuk pengajuan, approval berjenjang, dan audit trail permintaan akses aplikasi internal. Proyek ini dibangun dengan pendekatan **Clean Architecture**, **SQLite** (*zero-dependency*, mandiri tanpa Docker atau DBMS server eksternal), **Entity Framework Core**, **Razor Pages**, **Bootstrap 5**, **jQuery**, **SweetAlert2**, dan **DataTables**.
 
 ---
 
@@ -83,33 +83,37 @@ Sistem dilengkapi **User Switcher** pada bilah navigasi atas (kanan atas) yang m
 - **CRM**: System Owner adalah **Carol**.
 - **Finance Portal**: System Owner adalah **Dana**.
 
+> ℹ️ **Catatan Hirarki Organisasi (Business Rule 2.6)**:
+> Sesuai aturan bisnis wajib (Section 2.6: *"Semua request membutuhkan Manager approval terlebih dahulu"* dan *"Manager hanya boleh memproses direct report"*), pengguna wajib memiliki atasan langsung untuk mengajukan request. Dalam seeded data Phase 1, **Alice** melapor ke **Bob**. Jika persona lain yang tidak memiliki atasan langsung (Bob, Carol, Dana, Erin) mencoba membuat permohonan, backend secara proaktif menolaknya dengan pesan validasi edukatif guna mencegah *orphan request* (request tanpa approver sah).
+
 ---
 
 ## 6. Panduan Menjalankan 7 Skenario Demo Wajib
 
 ### Skenario 1: Standard Request (Non-High-Risk)
 1. Pada User Switcher di navbar, pastikan aktif sebagai **Alice**.
-2. Buka menu **New Request**:
+2. Klik tombol **Submit Request** di Dashboard atau **New Access Request** di My Requests:
+   - Form modal interaktif akan terbuka dengan navigasi Breadcrumbs.
    - Pilih Application: **CRM**.
    - Environment: **NonProduction**.
    - Access Level: **Read**.
    - Justification: "Akses membaca data CRM dev".
-   - Klik **Submit Request**. Status awal: `Pending Manager Approval`.
+   - Klik **Submit Request**. SweetAlert2 akan menampilkan status keberhasilan, dan request berpindah ke `Pending Manager Approval`.
 3. Ganti user ke **Bob** (Manager) melalui User Switcher.
-4. Buka menu **Approvals Inbox** &rarr; klik **Review & Decision** pada request Alice tadi.
-5. Klik tombol hijau **Approve Request**.
+4. Buka menu **Approvals Inbox** &rarr; klik **Approve** (via Quick Decision Modal) atau buka Detail request.
+5. Klik **Approve Request** pada konfirmasi modal.
 6. **Hasil**: Status langsung menjadi `Approved` (alur 1 tahap selesai) dan Audit Trail mencatat event `ManagerApproved`.
 
 ### Skenario 2: Production Request (High-Risk &rarr; 2-Stage Approval)
-1. Switch ke **Alice** &rarr; Buka **New Request**:
+1. Switch ke **Alice** &rarr; Buka modal **New Request**:
    - Pilih Application: **CRM**.
-   - Environment: **Production** *(Trigger High-Risk)*.
+   - Environment: **Production** *(Trigger High-Risk - notifikasi banner kuning muncul otomatis)*.
    - Access Level: **Read**.
    - Klik **Submit Request**.
-2. Switch ke **Bob** &rarr; Buka **Approvals Inbox** &rarr; Buka detail request &rarr; Klik **Approve Request**.
+2. Switch ke **Bob** &rarr; Buka **Approvals Inbox** &rarr; Buka detail request &rarr; Klik **Approve Request** pada modal konfirmasi.
 3. **Hasil Tahap 1**: Status berpindah ke `Pending System Owner Approval` (menunggu Carol).
 4. Switch ke **Carol** (System Owner CRM) &rarr; Buka **Approvals Inbox** &rarr; Buka detail request.
-5. Klik **Approve Request**.
+5. Klik **Approve Request** pada modal konfirmasi.
 6. **Hasil Tahap 2**: Status final menjadi `Approved` dengan 3 log audit berurutan (`Created`, `ManagerApproved`, `SystemOwnerApproved`).
 
 ### Skenario 3: Admin Access Request (High-Risk &rarr; Finance Portal)

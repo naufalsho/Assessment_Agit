@@ -13,6 +13,7 @@
     <title>@ViewData["Title"] - Access Request Hub</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" />
+    <link rel="stylesheet" href="~/lib/datatables/dataTables.bootstrap5.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
         .badge-pending { background-color: #ffc107; color: #000; }
@@ -66,11 +67,6 @@
                             <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Requests/Index" ? "active" : "")" asp-page="/Requests/Index">My Requests</a>
                         </li>
                         <li class="nav-item">
-                            <button type="button" class="btn btn-primary btn-sm ms-lg-2 my-1 my-lg-0" data-bs-toggle="modal" data-bs-target="#globalNewRequestModal">
-                                ➕ New Request
-                            </button>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Approvals/Index" ? "active" : "")" asp-page="/Approvals/Index">
                                 Approvals Inbox
                             </a>
@@ -115,7 +111,32 @@
         </nav>
     </header>
 
-    <div class="container-fluid px-4 py-4">
+    <div class="container-fluid px-4 py-3">
+        <!-- Dynamic Breadcrumbs -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb bg-white px-3 py-2 rounded shadow-sm border mb-0 small">
+                <li class="breadcrumb-item">
+                    <a asp-page="/Index" class="text-decoration-none text-primary">
+                        🏠 Home
+                    </a>
+                </li>
+                @if (ViewData["BreadcrumbSection"] != null)
+                {
+                    <li class="breadcrumb-item">
+                        <a href="@ViewData["BreadcrumbSectionUrl"]" class="text-decoration-none text-primary">
+                            @ViewData["BreadcrumbSection"]
+                        </a>
+                    </li>
+                }
+                @if (ViewContext.RouteData.Values["page"]?.ToString() != "/Index")
+                {
+                    <li class="breadcrumb-item active text-muted fw-semibold" aria-current="page">
+                        @(ViewData["Title"] ?? "Current")
+                    </li>
+                }
+            </ol>
+        </nav>
+
         <!-- Toast Notification Area -->
         <div id="alertContainer"></div>
 
@@ -133,9 +154,16 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4">
-                    <p class="text-muted small mb-3">
+                    <p class="text-muted small mb-2">
                         Submitting request on behalf of: <strong>@(currentUser?.FullName ?? "User")</strong> (@(currentUser?.Email ?? ""))
                     </p>
+
+                    @if (currentUser?.ManagerId == null)
+                    {
+                        <div class="alert alert-warning small mb-3">
+                            ⚠️ <strong>Hierarchy Constraint:</strong> <code>@(currentUser?.FullName)</code> does not have an assigned direct manager in the organization hierarchy. Sesuai Section 2.6, semua request mewajibkan Manager Approval. Silakan switch ke <strong>Alice</strong> (yang melapor ke Bob) untuk mendemokan pengajuan akses.
+                        </div>
+                    }
 
                     <form id="globalModalRequestForm">
                         <div class="mb-3">
@@ -215,9 +243,36 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/sweetalert2/sweetalert2.all.min.js"></script>
+    <script src="~/lib/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/lib/datatables/dataTables.bootstrap5.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
+        // DataTables Global Auto-Initializer
+        $(document).ready(function() {
+            $('.datatable').each(function() {
+                if (!$.fn.DataTable.isDataTable(this)) {
+                    $(this).DataTable({
+                        responsive: true,
+                        pageLength: 10,
+                        order: [], // Preserve server-rendered order
+                        columnDefs: [
+                            { orderable: false, targets: 'no-sort' }
+                        ],
+                        language: {
+                            search: "Filter:",
+                            searchPlaceholder: "Search table records...",
+                            lengthMenu: "_MENU_ per page",
+                            info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                            paginate: {
+                                previous: "&laquo;",
+                                next: "&raquo;"
+                            }
+                        }
+                    });
+                }
+            });
+        });
         // SweetAlert2 Global Helpers
         const Toast = Swal.mixin({
             toast: true,
@@ -421,3 +476,4 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+

@@ -26,6 +26,12 @@ public class AccessRequestService : IAccessRequestService
             throw new ForbiddenException("Authentication required to create access requests.");
         }
 
+        // Business Rule 2.6: All requests mandate Manager approval; requester must have an assigned direct manager
+        if (currentUser.ManagerId == null)
+        {
+            throw new DomainValidationException($"User '{currentUser.FullName}' ({currentUser.Role}) does not have an assigned direct manager in the hierarchy. By business rules, all access requests require a Manager approval.");
+        }
+
         if (string.IsNullOrWhiteSpace(dto.ClientRequestId))
         {
             throw new DomainValidationException("ClientRequestId is required for idempotency.");
