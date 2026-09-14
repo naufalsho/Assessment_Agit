@@ -20,9 +20,9 @@
                     </p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a asp-page="/Requests/Create" class="btn btn-primary">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#globalNewRequestModal">
                         ➕ Submit Request
-                    </a>
+                    </button>
                     <a asp-page="/Approvals/Index" class="btn btn-outline-secondary position-relative">
                         📥 Approvals Inbox
                         @if (Model.PendingApprovals.Count > 0)

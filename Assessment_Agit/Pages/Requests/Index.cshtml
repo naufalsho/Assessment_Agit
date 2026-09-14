@@ -11,9 +11,9 @@
             <p class="text-muted small mb-0">Showing requests created by <strong>@Model.CurrentUser?.FullName</strong></p>
         </div>
         <div>
-            <a asp-page="/Requests/Create" class="btn btn-primary btn-sm">
+            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#globalNewRequestModal">
                 ➕ New Access Request
-            </a>
+            </button>
         </div>
     </div>
 
@@ -23,7 +23,9 @@
             <div class="display-6 text-muted mb-3">📄</div>
             <h5 class="fw-semibold">No access requests found</h5>
             <p class="text-muted small">You haven't submitted any access requests yet.</p>
-            <a asp-page="/Requests/Create" class="btn btn-outline-primary btn-sm">Create your first request</a>
+            <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#globalNewRequestModal">
+                Create your first request
+            </button>
         </div>
     }
     else

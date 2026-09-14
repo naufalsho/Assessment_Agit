@@ -132,11 +132,16 @@
             };
 
             if (!formData.applicationId) {
-                showAlert("Please select an application first.", "warning");
+                Swal.fire({ icon: 'warning', title: 'Validation', text: 'Please select an application first.' });
                 return;
             }
 
-            showAlert("Sending duplicate submit with the same ClientRequestId...", "info");
+            Swal.fire({
+                title: 'Testing Idempotency...',
+                text: 'Sending duplicate submit with the same ClientRequestId...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
 
             $.ajax({
                 url: '/api/requests',
@@ -144,12 +149,32 @@
                 contentType: 'application/json',
                 data: JSON.stringify(formData),
                 success: function(res) {
-                    showAlert(`<strong>Idempotency Verified!</strong> Returned existing or created request with ID: <code>${res.id}</code> without creating duplicate records.`, 'success');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Idempotency Verified!',
+                        html: `Returned existing or created request with ID: <code>${res.id}</code> without creating duplicate database records.`,
+                        confirmButtonText: 'OK'
+                    });
                 },
                 error: function(xhr) {
-                    showAlert('Error: ' + (xhr.responseJSON?.error || xhr.statusText), 'danger');
+                    Swal.fire({
+                        icon: 'error',
+                        title: `Error (${xhr.status})`,
+                        html: xhr.responseJSON?.error || xhr.statusText
+                    });
                 }
             });
+        }
+
+        @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+        {
+            <text>
+            Swal.fire({
+                icon: 'error',
+                title: 'Submission Error',
+                text: '@Html.Raw(Model.ErrorMessage)'
+            });
+            </text>
         }
     </script>
 }

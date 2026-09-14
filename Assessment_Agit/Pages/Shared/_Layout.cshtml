@@ -3,6 +3,7 @@
 @{
     var currentUser = await CurrentUserService.GetUserAsync();
     var demoUsers = await RequestService.GetDemoUsersAsync();
+    var apps = await RequestService.GetApplicationsAsync();
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -11,6 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Access Request Hub</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/sweetalert2/sweetalert2.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <style>
         .badge-pending { background-color: #ffc107; color: #000; }
@@ -64,7 +66,9 @@
                             <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Requests/Index" ? "active" : "")" asp-page="/Requests/Index">My Requests</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Requests/Create" ? "active" : "")" asp-page="/Requests/Create">New Request</a>
+                            <button type="button" class="btn btn-primary btn-sm ms-lg-2 my-1 my-lg-0" data-bs-toggle="modal" data-bs-target="#globalNewRequestModal">
+                                ➕ New Request
+                            </button>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link @(ViewContext.RouteData.Values["page"]?.ToString() == "/Approvals/Index" ? "active" : "")" asp-page="/Approvals/Index">
@@ -120,6 +124,88 @@
         </main>
     </div>
 
+    <!-- Global New Request Modal -->
+    <div class="modal fade" id="globalNewRequestModal" tabindex="-1" aria-labelledby="globalNewRequestModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold" id="globalNewRequestModalLabel">➕ Submit Access Request</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        Submitting request on behalf of: <strong>@(currentUser?.FullName ?? "User")</strong> (@(currentUser?.Email ?? ""))
+                    </p>
+
+                    <form id="globalModalRequestForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Target Application <span class="text-danger">*</span></label>
+                            <select class="form-select" id="modalAppSelect" required>
+                                <option value="">-- Select Application --</option>
+                                @foreach (var app in apps)
+                                {
+                                    <option value="@app.Id">@app.Name (System Owner: @app.SystemOwnerName)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Environment <span class="text-danger">*</span></label>
+                                <select class="form-select" id="modalEnvSelect" required>
+                                    <option value="1">NonProduction</option>
+                                    <option value="2">Production</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Access Level <span class="text-danger">*</span></label>
+                                <select class="form-select" id="modalAccessSelect" required>
+                                    <option value="1">Read</option>
+                                    <option value="2">Admin</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Real-time High Risk Warning Banner -->
+                        <div id="modalRiskNotice" class="alert alert-warning py-2 small d-none" role="alert">
+                            ⚠️ <strong>High-Risk Request Detected:</strong> <code>Production</code> or <code>Admin</code> access requires both <strong>Manager Approval</strong> and <strong>System Owner Approval</strong>.
+                        </div>
+                        <div id="modalStandardNotice" class="alert alert-info py-2 small" role="alert">
+                            ℹ️ <strong>Standard Request:</strong> Requires only <strong>Manager Approval</strong> to become Approved.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Business Justification <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="modalJustification" rows="3" placeholder="Provide business reasons for this access request..." required></textarea>
+                        </div>
+
+                        <div class="mb-3 p-3 bg-light rounded border">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label class="form-label fw-semibold mb-0 small text-muted">
+                                    🔑 Idempotency Key (ClientRequestId)
+                                </label>
+                                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" onclick="regenerateModalGuid()">Generate New UUID</button>
+                            </div>
+                            <input class="form-control form-control-sm font-monospace" id="modalClientRequestId" required />
+                            <div class="form-text small">
+                                Mengirim ulang request dengan <code>ClientRequestId</code> yang sama tidak akan menduplikasi row di database.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-warning" onclick="modalSimulateDuplicateSubmit()">
+                        🧪 Test Idempotency (Duplicate Submit)
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary px-4" onclick="submitModalRequest()">
+                        Submit Request
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="border-top py-3 text-center text-muted small bg-white mt-auto">
         <div class="container-fluid">
             Access Request Hub MVP &bull; Clean Architecture &bull; SQLite Zero-Dependency &bull; ASP.NET Core 10 Razor Pages
@@ -128,30 +214,205 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/sweetalert2/sweetalert2.all.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <script>
+        // SweetAlert2 Global Helpers
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3500,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
+            }
+        });
+
+        function showToast(message, icon = 'success') {
+            Toast.fire({
+                icon: icon,
+                title: message
+            });
+        }
+
         function showAlert(message, type = 'info') {
-            const html = `
-                <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
-                    <div>${message}</div>
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            `;
-            $('#alertContainer').html(html);
+            let swalIcon = 'info';
+            if (type === 'danger' || type === 'error') swalIcon = 'error';
+            else if (type === 'warning') swalIcon = 'warning';
+            else if (type === 'success') swalIcon = 'success';
+
+            Swal.fire({
+                icon: swalIcon,
+                title: swalIcon === 'error' ? 'Notice / Error' : 'Information',
+                html: message,
+                confirmButtonColor: '#0d6efd'
+            });
         }
 
         function switchUser(userId) {
+            Swal.fire({
+                title: 'Switching User...',
+                text: 'Updating active simulated session',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             $.ajax({
                 url: '/api/switch-user',
                 method: 'POST',
                 contentType: 'application/json',
                 data: JSON.stringify({ userId: userId }),
                 success: function (res) {
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Switched!',
+                        text: res.message,
+                        timer: 1200,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
                 },
                 error: function (xhr) {
-                    showAlert('Failed to switch user: ' + (xhr.responseJSON?.message || xhr.statusText), 'danger');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Failed to switch user',
+                        text: (xhr.responseJSON?.message || xhr.statusText)
+                    });
+                }
+            });
+        }
+
+        // Modal New Request Logic
+        function regenerateModalGuid() {
+            const newGuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+            $('#modalClientRequestId').val(newGuid);
+        }
+
+        function checkModalRisk() {
+            const env = $('#modalEnvSelect').val();
+            const access = $('#modalAccessSelect').val();
+            if (env === '2' || access === '2') {
+                $('#modalRiskNotice').removeClass('d-none');
+                $('#modalStandardNotice').addClass('d-none');
+            } else {
+                $('#modalRiskNotice').addClass('d-none');
+                $('#modalStandardNotice').removeClass('d-none');
+            }
+        }
+
+        $(document).ready(function() {
+            regenerateModalGuid();
+            checkModalRisk();
+            $('#modalEnvSelect, #modalAccessSelect').on('change', checkModalRisk);
+        });
+
+        function submitModalRequest() {
+            const appId = $('#modalAppSelect').val();
+            const env = parseInt($('#modalEnvSelect').val());
+            const access = parseInt($('#modalAccessSelect').val());
+            const justification = $('#modalJustification').val()?.trim();
+            const clientRequestId = $('#modalClientRequestId').val()?.trim();
+
+            if (!appId) {
+                Swal.fire({ icon: 'warning', title: 'Validation', text: 'Please select a target application.' });
+                return;
+            }
+            if (!justification) {
+                Swal.fire({ icon: 'warning', title: 'Validation', text: 'Justification is mandatory.' });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Submitting Access Request...',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            $.ajax({
+                url: '/api/requests',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    clientRequestId: clientRequestId,
+                    applicationId: appId,
+                    environment: env,
+                    accessLevel: access,
+                    justification: justification
+                }),
+                success: function(res) {
+                    $('#globalNewRequestModal').modal('hide');
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Request Created!',
+                        html: `Request successfully submitted with ID: <code>${res.id}</code>.<br/>Status: <strong>${res.status === 1 ? 'Pending Manager Approval' : res.status}</strong>`,
+                        confirmButtonText: 'View Details'
+                    }).then(() => {
+                        window.location.href = `/Requests/Detail?id=${res.id}`;
+                    });
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: `Submission Failed (${xhr.status})`,
+                        html: xhr.responseJSON?.error || xhr.statusText
+                    });
+                }
+            });
+        }
+
+        function modalSimulateDuplicateSubmit() {
+            const appId = $('#modalAppSelect').val();
+            const env = parseInt($('#modalEnvSelect').val());
+            const access = parseInt($('#modalAccessSelect').val());
+            const justification = $('#modalJustification').val()?.trim() || "Duplicate idempotency test justification";
+            const clientRequestId = $('#modalClientRequestId').val()?.trim();
+
+            if (!appId) {
+                Swal.fire({ icon: 'warning', title: 'Validation', text: 'Please select an application first.' });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Testing Idempotency...',
+                text: `Sending request with ClientRequestId: ${clientRequestId}`,
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            $.ajax({
+                url: '/api/requests',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    clientRequestId: clientRequestId,
+                    applicationId: appId,
+                    environment: env,
+                    accessLevel: access,
+                    justification: justification
+                }),
+                success: function(res) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Idempotency Verified!',
+                        html: `Server successfully returned existing or created request <code>${res.id}</code> without creating duplicate database rows!`,
+                        confirmButtonText: 'OK'
+                    });
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: `Error (${xhr.status})`,
+                        html: xhr.responseJSON?.error || xhr.statusText
+                    });
                 }
             });
         }
@@ -160,4 +421,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-
