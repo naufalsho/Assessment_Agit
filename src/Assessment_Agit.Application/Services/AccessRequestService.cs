@@ -4,6 +4,7 @@ using Assessment_Agit.Domain.Entities;
 using Assessment_Agit.Domain.Enums;
 using Assessment_Agit.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Assessment_Agit.Application.Services;
 
@@ -11,11 +12,13 @@ public class AccessRequestService : IAccessRequestService
 {
     private readonly IAppDbContext _context;
     private readonly ICurrentUserService _currentUserService;
+    private readonly ILogger<AccessRequestService>? _logger;
 
-    public AccessRequestService(IAppDbContext context, ICurrentUserService currentUserService)
+    public AccessRequestService(IAppDbContext context, ICurrentUserService currentUserService, ILogger<AccessRequestService>? logger = null)
     {
         _context = context;
         _currentUserService = currentUserService;
+        _logger = logger;
     }
 
     public async Task<AccessRequestDetailDto> CreateRequestAsync(CreateAccessRequestDto dto, CancellationToken cancellationToken = default)
@@ -66,6 +69,7 @@ public class AccessRequestService : IAccessRequestService
                 existing.Environment == dto.Environment &&
                 existing.AccessLevel == dto.AccessLevel)
             {
+                _logger?.LogInformation("Idempotent request detected. Returning existing AccessRequest {RequestId} for ClientRequestId {ClientRequestId}.", existing.Id, dto.ClientRequestId);
                 return MapToDetailDto(existing, currentUser);
             }
 
@@ -105,6 +109,8 @@ public class AccessRequestService : IAccessRequestService
             _context.AccessRequests.Add(request);
             _context.AuditLogs.Add(auditLog);
             await _context.SaveChangesAsync(cancellationToken);
+            _logger?.LogInformation("Successfully created AccessRequest {RequestId} for requester {UserId} (ClientRequestId: {ClientRequestId}).", request.Id, currentUser.Id, request.ClientRequestId);
+        }
         }
         catch (DbUpdateException)
         {
@@ -220,6 +226,7 @@ public class AccessRequestService : IAccessRequestService
         // Optimistic Concurrency check: verify client did not submit against a stale snapshot
         if (decision.RowVersion != request.RowVersion)
         {
+            _logger?.LogWarning("Concurrency conflict detected on AccessRequest {RequestId}. Expected version {DbVersion}, but received {ClientVersion}.", requestId, request.RowVersion, decision.RowVersion);
             throw new ConcurrencyConflictException("This request has already been modified or approved by another user or session. Please refresh.");
         }
 
@@ -232,6 +239,7 @@ public class AccessRequestService : IAccessRequestService
         // Business Rule: Requester cannot approve their own request
         if (request.RequesterId == currentUser.Id)
         {
+            _logger?.LogWarning("User {UserId} attempted prohibited self-approval on AccessRequest {RequestId}.", currentUser.Id, requestId);
             throw new ForbiddenException("Requesters are strictly prohibited from approving or rejecting their own requests.");
         }
 
@@ -244,6 +252,7 @@ public class AccessRequestService : IAccessRequestService
             // Business Rule: Only direct manager can process
             if (request.Requester.ManagerId != currentUser.Id)
             {
+                _logger?.LogWarning("User {UserId} unauthorized to approve Manager stage for AccessRequest {RequestId}.", currentUser.Id, requestId);
                 throw new ForbiddenException("Only the requester's direct manager is authorized to approve this stage.");
             }
 
