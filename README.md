@@ -16,10 +16,11 @@ Assessment_Agit/
 ├── Assessment_Agit/                    # ASP.NET Core Razor Pages (Web UI), User Switcher, Minimal API Endpoints
 ├── tests/
 │   └── Assessment_Agit.Tests/          # Automated Test Suite (xUnit + SQLite In-Memory)
-├── PLAN.md                             # Problem understanding, arsitektur, trade-offs, log perubahan
-├── AI_USAGE.md                         # Interaksi AI paling berpengaruh & "Three things AI got wrong"
-├── REVIEW.md                           # Production readiness review, severity, limitations & deferred work
-├── INTEGRITY.md                        # Deklarasi integritas engineering
+├── documentation/
+│   ├── PLAN.md                         # Problem understanding, arsitektur, trade-offs, log perubahan
+│   ├── AI_USAGE.md                     # Interaksi AI paling berpengaruh & "Three things AI got wrong"
+│   ├── REVIEW.md                       # Production readiness review, severity, limitations & deferred work
+│   └── INTEGRITY.md                    # Deklarasi integritas engineering
 └── README.md                           # Panduan setup, run, test, dan skenario demo
 ```
 
@@ -159,10 +160,10 @@ Sistem dilengkapi **User Switcher** pada bilah navigasi atas (kanan atas) yang m
 ## 7. Evidence Deliverables Checklist
 
 - [x] **Git Repository History**: Tag `assessment-start` dibuat sebelum implementasi inti.
-- [x] **PLAN.md**: Problem understanding, arsitektur, trade-offs, dan catatan penyesuaian.
-- [x] **AI_USAGE.md**: Ringkasan interaksi AI berdampak dan bagian "Three things AI got wrong".
-- [x] **REVIEW.md**: Production readiness self-review matrix, limitasi, dan deferred work.
-- [x] **INTEGRITY.md**: Deklarasi integritas kepemilikan kode.
+- [x] **documentation/PLAN.md**: Problem understanding, arsitektur, trade-offs, dan catatan penyesuaian.
+- [x] **documentation/AI_USAGE.md**: Ringkasan interaksi AI berdampak dan bagian "Three things AI got wrong".
+- [x] **documentation/REVIEW.md**: Production readiness self-review matrix, limitasi, dan deferred work.
+- [x] **documentation/INTEGRITY.md**: Deklarasi integritas kepemilikan kode.
 - [x] **README.md**: Petunjuk setup, run, test, dan demo walkthrough.
 - [x] **Automated Tests**: 100% lulus (8/8 skenario).
 - [ ] **Tag `phase-1-complete`**: Ditangguhkan sesuai instruksi pengguna untuk pengecekan manual terlebih dahulu sebelum di-tag.
