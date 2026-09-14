@@ -18,6 +18,6 @@ public class AuditLog
     public RequestStatus ToStatus { get; set; }
 
     public string? Details { get; set; }
-    public DateTimeOffset Timestamp { get; set; } = DateTimeOffset.UtcNow;
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
 

@@ -33,8 +33,8 @@ public class AccessRequest
     [ConcurrencyCheck]
     public int RowVersion { get; set; } = 1;
 
-    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
-    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public bool IsHighRisk => Environment == EnvironmentType.Production || AccessLevel == AccessLevel.Admin;
 

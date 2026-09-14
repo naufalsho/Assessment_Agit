@@ -39,8 +39,8 @@ public class AccessRequestDetailDto
     public string PolicyVersion { get; set; } = string.Empty;
     public int RowVersion { get; set; }
 
-    public DateTimeOffset CreatedAt { get; set; }
-    public DateTimeOffset UpdatedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
 
     public bool IsHighRisk { get; set; }
     public bool CanCurrentUserApprove { get; set; }
@@ -59,7 +59,7 @@ public class AuditLogDto
     public RequestStatus? FromStatus { get; set; }
     public RequestStatus ToStatus { get; set; }
     public string? Details { get; set; }
-    public DateTimeOffset Timestamp { get; set; }
+    public DateTime Timestamp { get; set; }
 }
 
 public class UserDto

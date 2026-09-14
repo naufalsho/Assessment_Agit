@@ -45,3 +45,4 @@ Dokumen ini mendokumentasikan peran asistensi AI (Antigravity AI Assistant berba
 3. **Ketergantungan pada Payload Input untuk Identitas Requester**:
    - *Error*: Draft awal controller/handler yang disarankan AI menyertakan field `RequesterId` di dalam DTO `CreateAccessRequestDto`, membuka celah bagi user untuk menyamar sebagai pengguna lain (*privilege escalation*).
    - *Koreksi Pengembang*: Field `RequesterId` dihapus dari DTO publik; identitas pengguna aktif wajib diambil langsung dari `ICurrentUserService` yang terautentikasi di level server.
+

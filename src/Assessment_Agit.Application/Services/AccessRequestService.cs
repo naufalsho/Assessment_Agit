@@ -78,8 +78,8 @@ public class AccessRequestService : IAccessRequestService
             Status = RequestStatus.PendingManager,
             PolicyVersion = "v1",
             RowVersion = 1,
-            CreatedAt = DateTimeOffset.UtcNow,
-            UpdatedAt = DateTimeOffset.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
         };
 
         var auditLog = new AuditLog
@@ -91,7 +91,7 @@ public class AccessRequestService : IAccessRequestService
             FromStatus = null,
             ToStatus = RequestStatus.PendingManager,
             Details = "Access request created and submitted for Manager approval.",
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTime.UtcNow
         };
 
         try
@@ -131,10 +131,12 @@ public class AccessRequestService : IAccessRequestService
             .Include(r => r.Application).ThenInclude(a => a.SystemOwner)
             .Include(r => r.AuditLogs).ThenInclude(a => a.Actor)
             .Where(r => r.RequesterId == currentUser.Id)
-            .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return requests.Select(r => MapToDetailDto(r, currentUser)).ToList();
+        return requests
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => MapToDetailDto(r, currentUser))
+            .ToList();
     }
 
     public async Task<List<AccessRequestDetailDto>> GetPendingApprovalsAsync(CancellationToken cancellationToken = default)
@@ -149,10 +151,12 @@ public class AccessRequestService : IAccessRequestService
             .Where(r =>
                 (r.Status == RequestStatus.PendingManager && r.Requester.ManagerId == currentUser.Id && r.RequesterId != currentUser.Id) ||
                 (r.Status == RequestStatus.PendingSystemOwner && r.Application.SystemOwnerId == currentUser.Id && r.RequesterId != currentUser.Id))
-            .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return requests.Select(r => MapToDetailDto(r, currentUser)).ToList();
+        return requests
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => MapToDetailDto(r, currentUser))
+            .ToList();
     }
 
     public async Task<List<AccessRequestDetailDto>> GetAllRequestsAsync(CancellationToken cancellationToken = default)
@@ -163,10 +167,12 @@ public class AccessRequestService : IAccessRequestService
             .Include(r => r.Requester).ThenInclude(u => u.Manager)
             .Include(r => r.Application).ThenInclude(a => a.SystemOwner)
             .Include(r => r.AuditLogs).ThenInclude(a => a.Actor)
-            .OrderByDescending(r => r.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return requests.Select(r => MapToDetailDto(r, currentUser)).ToList();
+        return requests
+            .OrderByDescending(r => r.CreatedAt)
+            .Select(r => MapToDetailDto(r, currentUser))
+            .ToList();
     }
 
     public async Task<AccessRequestDetailDto> GetRequestByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -300,7 +306,7 @@ public class AccessRequestService : IAccessRequestService
 
         // Concurrency token increment
         request.RowVersion++;
-        request.UpdatedAt = DateTimeOffset.UtcNow;
+        request.UpdatedAt = DateTime.UtcNow;
 
         var auditLog = new AuditLog
         {
@@ -311,7 +317,7 @@ public class AccessRequestService : IAccessRequestService
             FromStatus = fromStatus,
             ToStatus = request.Status,
             Details = auditDetails,
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTime.UtcNow
         };
 
         _context.AuditLogs.Add(auditLog);

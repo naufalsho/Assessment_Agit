@@ -10,3 +10,4 @@ known limitations, security implications, and trade-offs.
 **External human assistance:** None
 **Starter/template code used:** Default ASP.NET Core Razor Pages template (`dotnet new razor`) for baseline web host scaffolding.
 **External repositories/snippets copied or adapted:** None (Clean Architecture layer abstraction, business logic, EF Core configuration, and automated test suite were authored directly).
+
