@@ -166,5 +166,5 @@ Sistem dilengkapi **User Switcher** pada bilah navigasi atas (kanan atas) yang m
 - [x] **documentation/INTEGRITY.md**: Deklarasi integritas kepemilikan kode.
 - [x] **README.md**: Petunjuk setup, run, test, dan demo walkthrough.
 - [x] **Automated Tests**: 100% lulus (8/8 skenario).
-- [ ] **Tag `phase-1-complete`**: Ditangguhkan sesuai instruksi pengguna untuk pengecekan manual terlebih dahulu sebelum di-tag.
+- [x] **Tag `phase-1-complete`**: Dibuat menandai penyelesaian penuh seluruh spesifikasi Phase 1 MVP.
 

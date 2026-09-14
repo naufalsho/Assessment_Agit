@@ -104,7 +104,7 @@ Selama proses implementasi dan eksekusi test suite, beberapa penyesuaian dilakuk
 3. **Penyediaan Minimal API Endpoints Paralel**:
    - Selain Razor Pages post handlers, endpoint minimal API (`/api/requests`, `/api/requests/{id}/approve`, `/api/requests/{id}/reject`, `/api/switch-user`) disediakan untuk memfasilitasi AJAX jQuery dari frontend sekaligus pengujian integrasi via HTTP client atau cURL secara transparan.
 4. **Alur Validasi Tag Phase-1-Complete**:
-   - Sesuai arahan evaluasi pengguna, pembuatan Git tag `phase-1-complete` ditangguhkan sampai assessor/pengguna selesai memvalidasi alur secara manual melalui UI atau CLI.
+   - Pembuatan Git tag `phase-1-complete` dieksekusi setelah seluruh validasi fungsional, UI, dan automated test suite terpenuhi 100%.
 5. **Mitigasi SQLite DateTimeOffset OrderBy**:
    - EF Core SQLite tidak mendukung ekspresi tipe `DateTimeOffset` dalam klausa `ORDER BY`. Seluruh entity tanggal dimigrasikan ke `DateTime` (UTC), dan pengurutan riwayat request dipastikan dieksekusi secara aman via LINQ to Objects (`.ToListAsync()` lalu `.OrderByDescending()`).
 6. **Modernisasi UI dengan Modal-First, SweetAlert2, DataTables, dan Breadcrumbs**:
